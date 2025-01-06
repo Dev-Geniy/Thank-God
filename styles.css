@@ -279,31 +279,32 @@ p {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* счётчик */
+/* СЧЁТЧИК */
 /* Основные стили для блока с меткой и счетчиком */
 #counter-container {
-    position: fixed; /* Закрепляем внизу экрана */
-    bottom: 70px; /* Расстояние от нижней границы экрана */
-    left: 50%; /* Центрируем по горизонтали */
-    transform: translateX(-50%); /* Коррекция для центрирования */
-    background-color: rgba(50, 50, 50, 0.8); /* Приглушенный серый оттенок */
-    color: white; /* Белый текст */
-    padding: 20px;
-    border-radius: 10px; /* Скругленные углы */
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-10%);
+    background-color: rgba(50, 50, 50, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 15px;
     font-family: 'Arial', sans-serif;
     display: flex;
-    flex-direction: column; /* Размещение элементов по вертикали */
-    align-items: center; /* Выравнивание по центру */
-    opacity: 1; /* Изначальная видимость */
-    transition: opacity 1s ease; /* Плавное исчезновение */
+    flex-direction: column;
+    align-items: center;
+    opacity: 1;
+    transition: opacity 2s ease; /* Плавное исчезновение */
+    z-index: 1000;
 }
 
 /* Стили для текста */
 #counter-container h3 {
     color: #d3d3d3; /* Приглушенный серый цвет */
-    font-size: 16px;
+    font-size: 18px;
     text-align: center;
-    margin-bottom: 15px; /* Отступ между текстом и счетчиком */
+    margin-bottom: 15px;
     font-weight: normal;
 }
 
@@ -312,18 +313,189 @@ p {
     display: flex;
     align-items: center;
     font-size: 14px;
-    margin-bottom: 10px; /* Отступ между текстом и счетчиком */
+    margin-bottom: 10px;
 }
 
 /* Иконка рядом с текстом */
 #counter-container .text img {
-    width: 30px; /* Размер иконки */
+    width: 30px;
     height: 30px;
-    margin-right: 8px; /* Отступ между иконкой и текстом */
+    margin-right: 8px;
 }
 
 /* Стили для изображения счетчика */
 #counter-container img {
-    width: 120px; /* Размер счетчика */
+    width: 120px;
     height: auto;
+}
+
+ /* МОДАЛЬНОЕ ОКНО */
+/* Основные стили для модального окна */
+.modal {
+  display: none; /* Скрыто по умолчанию */
+  position: fixed; /* Фиксированное положение */
+  z-index: 1; /* Чтобы окно было поверх других элементов */
+  left: 0;
+  top: 0;
+  width: 100%; /* Ширина экрана */
+  height: 100%; /* Высота экрана */
+  background-color: rgba(0, 0, 0, 0.7); /* Темный фон с прозрачностью */
+  transition: opacity 0.3s ease; /* Плавное исчезновение */
+}
+
+/* Стиль для содержимого модального окна */
+.modal-content {
+  background-color: #fff;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  transition: transform 0.3s ease-out;
+  transform: scale(0.9);
+}
+
+/* Анимация появления модального окна */
+.modal.show .modal-content {
+  transform: scale(1); /* Применяется, когда окно открыто */
+}
+
+/* Крестик для закрытия */
+.close {
+  color: #aaa;
+  font-size: 30px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Христианский крестик */
+.christian-cross {
+  font-size: 40px;
+  color: white;
+  text-align: center;
+  text-shadow: 0 0 20px black; /* Черное свечение */
+  margin-bottom: 20px;
+}
+
+/* Стиль для заголовков и текста в модальном окне */
+.modal-content h2,
+.modal-content h3 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.modal-content p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Прокрутка внутри модального окна */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.gtranslate_wrapper {
+  opacity: 0.2; /* Устанавливает прозрачность 50% */
+  transition: opacity 0.3s ease-in-out; /* Плавный переход */
+}
+
+.gtranslate_wrapper:hover {
+  opacity: 1; /* Полностью непрозрачный при наведении */
+}
+
+/* Стиль для контейнера с иконкой */
+#icon-container {
+  text-align: center;
+  margin-bottom: 5px; /* Отступ от текста */
+}
+
+/* Иконка */
+#changing-icon {
+  width: 30px; /* Размер иконки */
+  height: 30px;
+  animation: iconChange 1s infinite; /* Анимация смены иконки */
+}
+
+/* Стиль текста для дележа */
+.share-message {
+    text-align: center;
+    font-style: italic;
+    color: #555;
+    margin: 15px 0;
+    font-size: 16px;
+    line-height: 1.6;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Кнопки дележа */
+.share-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.share-buttons a img {
+    width: 40px;
+    height: 40px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.share-buttons a img:hover {
+    transform: scale(1.3);
+}
+
+/* Стиль для секции "Как пользоваться приложением" */
+.usage-image {
+    text-align: center;
+    margin: 20px 0; /* Отступы сверху и снизу */
+}
+
+.usage-image img {
+    max-width: 100%; /* Адаптация для разных размеров экранов */
+    height: auto;
+    border-radius: 10px; /* Сглаженные углы */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень вокруг изображения */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.usage-image img:hover {
+    transform: scale(1.05); /* Лёгкое увеличение при наведении */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Увеличенная тень при наведении */
+}
+
+/* Стили для блока с текстом */
+.text-block {
+    text-align: left; /* Выравнивание текста по правому краю */
+    margin: 10px 0; /* Отступы сверху и снизу */
+    line-height: 1.8; /* Увеличение межстрочного расстояния для удобства чтения */
+    font-family: 'Arial', sans-serif; /* Общий стиль текста */
+    font-size: 16px;
+    color: #333; /* Цвет текста */
 }
