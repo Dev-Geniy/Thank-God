@@ -8,7 +8,7 @@ const homeScreen = document.getElementById("homeScreen");
     const gratitude3 = document.getElementById("gratitude3");
     const bibleVerse = document.getElementById("bibleVerse");
     const progressBarDays = document.querySelectorAll(".day");
-
+  
 const randomBibleVerses = [
     "Благодарите Господа, ибо Он благ, ибо вовек милость Его. (Псалом 106:1)",
     "Всё могу в укрепляющем меня Иисусе Христе. (Филиппийцам 4:13)",
@@ -176,7 +176,7 @@ const randomBibleVerses = [
             gratitudeInput.style.display = "none";
             infoMessage.style.display = "none";  // Прячем информационное сообщение
         } else {
-            if (currentHour >= 13 && currentHour < 24) {
+            if (currentHour >= 19 && currentHour < 24) {
                 gratitudeInput.style.display = "flex";
                 infoMessage.style.display = "none";
             } else {
@@ -189,7 +189,7 @@ const randomBibleVerses = [
             Notification.requestPermission();
         }
 
-        if (currentHour === 13 && !gratitudeAddedToday) {
+        if (currentHour === 19 && !gratitudeAddedToday) {
             if (Notification.permission === 'granted') {
                 new Notification("Не забудьте добавить свою благодарность!", {
                     body: "Каждый день - это новый шанс быть благодарным.",
@@ -227,6 +227,42 @@ const randomBibleVerses = [
 
 
 
+// МОДАЛЬНОЕ ОКНО
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.querySelector('#myModal');
+  const closeBtn = document.querySelector('.close');
+  const helpIcon = document.getElementById('helpIcon');
+
+  // Функция для открытия модального окна
+  function openModal() {
+    modal.style.display = 'block';
+    modal.classList.add('show'); // Добавляем класс для анимации
+    document.body.style.overflow = 'hidden'; // Отключаем прокрутку
+  }
+
+  // Функция для закрытия модального окна
+  function closeModal() {
+    modal.style.display = 'none';
+    modal.classList.remove('show'); // Убираем класс для анимации
+    document.body.style.overflow = 'auto'; // Включаем прокрутку
+  }
+
+  // Открытие модального окна по клику на иконку
+  helpIcon.addEventListener('click', openModal);
+
+  // Закрытие модального окна по клику на крестик
+  closeBtn.addEventListener('click', closeModal);
+
+  // Закрытие модального окна при клике вне его
+  window.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+});
+
+
+// ПАНЕЛЬ МЕНЮ
 // Смена иконки при наведении
 const homeIcon = document.getElementById("homeIcon");
 const savedIcon = document.getElementById("savedIcon");
@@ -244,6 +280,10 @@ const images = {
     anotherIcon: [
         "https://cdn-icons-png.freepik.com/256/786/786672.png?ga=GA1.1.469636009.1732164694&semt=ais_hybrid",
         "https://cdn-icons-png.freepik.com/256/786/786723.png?ga=GA1.1.469636009.1732164694&semt=ais_hybrid"
+    ],
+     helpIcon: [
+        "https://cdn-icons-png.flaticon.com/128/7298/7298943.png",
+        "https://cdn-icons-png.flaticon.com/128/7298/7298928.png"
     ]
 };
 
@@ -260,13 +300,16 @@ homeIcon.addEventListener("mouseleave", () => changeIconImage("homeIcon", false)
 savedIcon.addEventListener("mouseenter", () => changeIconImage("savedIcon", true));
 savedIcon.addEventListener("mouseleave", () => changeIconImage("savedIcon", false));
 
+helpIcon.addEventListener("mouseenter", () => changeIconImage("helpIcon", true));
+helpIcon.addEventListener("mouseleave", () => changeIconImage("helpIcon", false));
+
 anotherIcon.addEventListener("mouseenter", () => changeIconImage("anotherIcon", true));
 anotherIcon.addEventListener("mouseleave", () => changeIconImage("anotherIcon", false));
 
 const shareIcon = document.getElementById("anotherIcon");
 
 shareIcon.addEventListener("click", () => {
-    const appLink = "https://example.com"; // Ссылка на приложение или сайт
+    const appLink = "https://dev-geniy.github.io/Thank-God/"; // Ссылка на приложение или сайт
 
     if (navigator.share) {
         navigator.share({
@@ -288,7 +331,6 @@ shareIcon.addEventListener("click", () => {
     }
 });
 
-// Таймер для исчезновения блока счетчика
 // Функция для скрытия счетчика
 function hideCounter() {
     const counterContainer = document.getElementById('counter-container');
