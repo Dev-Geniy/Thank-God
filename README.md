@@ -60,7 +60,7 @@
 ## Структура проекта
 
     ```bash
-    Thank-You-God/
+    Thank-God/
     │
     ├── index.html                Главная страница приложения
     ├── styles.css                Стили для приложения
