@@ -45,7 +45,7 @@
 1. Клонируйте репозиторий на локальный компьютер:
 
    ```bash
-   git clone https://github.com/ваш-логин/thank-you-god.git
+   git clone https://github.com/ваш-логин/thank-god.git
 
 2. Откройте проект в вашем любимом текстовом редакторе или IDE.
 3. Запустите index.html в вашем браузере.
