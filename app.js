@@ -176,7 +176,7 @@ const randomBibleVerses = [
             gratitudeInput.style.display = "none";
             infoMessage.style.display = "none";  // Прячем информационное сообщение
         } else {
-            if (currentHour >= 19 && currentHour < 24) {
+            if (currentHour >= 13 && currentHour < 24) {
                 gratitudeInput.style.display = "flex";
                 infoMessage.style.display = "none";
             } else {
@@ -224,8 +224,6 @@ const randomBibleVerses = [
 
     saveButton.addEventListener("click", saveGratitude);
 });
-
-
 
 // МОДАЛЬНОЕ ОКНО
 document.addEventListener('DOMContentLoaded', function() {
