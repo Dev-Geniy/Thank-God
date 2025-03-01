@@ -105,7 +105,7 @@
 ## Скриншоты
 ### Скриншот главного экрана
 
-![Screenshot-17](https://i.ibb.co/xzqbmr0/Screenshot-17.png)
+![Screenshot-17](https://i.ibb.co/sdSfjQSP/Screenshot-37.png)
 
 ## Контакты
 Если у вас есть вопросы или предложения, не стесняйтесь связаться со мной по электронной почте: dev_geniy_partner@protonmail.com
