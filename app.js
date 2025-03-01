@@ -419,7 +419,7 @@ document.body.addEventListener('click', () => {
     hideCounter();
 });
 
-// Регистрация сервис-воркера в вашем приложении (app.js)
+// Регистрация сервис-воркера в приложении
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
