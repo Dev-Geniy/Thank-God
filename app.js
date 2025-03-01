@@ -1,14 +1,229 @@
-document.addEventListener("DOMContentLoaded", () => { 
-const homeScreen = document.getElementById("homeScreen");
-    const gratitudeList = document.getElementById("gratitudeList");
-    const gratitudeInput = document.getElementById("gratitudeInput");
-    const saveButton = document.getElementById("saveGratitude");
-    const gratitude1 = document.getElementById("gratitude1");
-    const gratitude2 = document.getElementById("gratitude2");
-    const gratitude3 = document.getElementById("gratitude3");
-    const bibleVerse = document.getElementById("bibleVerse");
-    const progressBarDays = document.querySelectorAll(".day");
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("gratitudeForm");
+  const gratitudeList = document.getElementById("gratitudeList");
+  const clearHistoryBtn = document.getElementById("clearHistory");
+  const navButtons = document.querySelectorAll(".nav-btn");
+
+  let db;
   
+  // Инициализация базы данных IndexedDB
+  function initDB() {
+    const request = indexedDB.open("gratitudeDB", 2); // Обновляем версию базы данных
+
+    request.onupgradeneeded = function (e) {
+      db = e.target.result;
+
+      // Проверяем наличие объекта Store и индекса
+      if (!db.objectStoreNames.contains("gratitudes")) {
+        const store = db.createObjectStore("gratitudes", { keyPath: "id", autoIncrement: true });
+        // Создаем индекс для поля "date"
+        store.createIndex("date", "date", { unique: false });
+      } else {
+        // Если база уже существует, просто добавляем индекс
+        const store = e.target.transaction.objectStore("gratitudes");
+        if (!store.indexNames.contains("date")) {
+          store.createIndex("date", "date", { unique: false });
+        }
+      }
+    };
+
+    request.onerror = function () {
+      alert("Ошибка при открытии базы данных.");
+    };
+
+    request.onsuccess = function (e) {
+      db = e.target.result;
+      displayHistory(); // Загружаем историю благодарностей при успешном открытии базы
+      updateProgressBar(); // Обновляем прогресс-бар
+    };
+  }
+
+  // Проверка на существование благодарности за сегодняшний день
+  function checkIfGratitudeExists(todayDate, callback) {
+    const transaction = db.transaction(["gratitudes"], "readonly");
+    const store = transaction.objectStore("gratitudes");
+    const index = store.index("date");
+    const request = index.get(todayDate);
+
+    request.onsuccess = function () {
+      callback(!!request.result);
+    };
+
+    request.onerror = function () {
+      console.error("Ошибка при проверке существования благодарности.");
+      callback(false);
+    };
+  }
+
+  // Сохранение благодарности
+  function saveGratitude(event) {
+    event.preventDefault();
+
+    const gratitude1 = document.getElementById("gratitude1").value;
+    const gratitude2 = document.getElementById("gratitude2").value;
+    const gratitude3 = document.getElementById("gratitude3").value;
+    const todayDate = new Date().toLocaleDateString();
+
+    if (!gratitude1 || !gratitude2 || !gratitude3) {
+      alert("Заполните все поля!");
+      return;
+    }
+
+    // Проверка на существование благодарности за сегодня
+    checkIfGratitudeExists(todayDate, (exists) => {
+      if (exists) {
+        alert("Благодарности Богу за этот день уже сохранены!");
+        return;
+      }
+
+      const gratitudeEntry = {
+        date: todayDate,
+        items: [gratitude1, gratitude2, gratitude3],
+      };
+
+      const transaction = db.transaction(["gratitudes"], "readwrite");
+      const store = transaction.objectStore("gratitudes");
+      store.add(gratitudeEntry);
+
+      transaction.oncomplete = function () {
+        form.reset();
+        switchScreen("screen2");
+        displayHistory();
+        updateProgressBar(); // Обновляем прогресс-бар
+      };
+
+      transaction.onerror = function () {
+        alert("Ошибка при сохранении благодарности.");
+      };
+    });
+  }
+
+  // Отображение истории благодарностей
+  function displayHistory() {
+    gratitudeList.innerHTML = "";
+    const transaction = db.transaction(["gratitudes"], "readonly");
+    const store = transaction.objectStore("gratitudes");
+
+    const request = store.getAll();
+    request.onsuccess = function () {
+      const history = request.result;
+      history.forEach((entry) => {
+        const card = document.createElement("div");
+        card.classList.add("history-entry");
+        card.innerHTML = `<strong>${entry.date}</strong><br>${entry.items.join("<br>")}`;
+        gratitudeList.appendChild(card);
+      });
+    };
+    request.onerror = function () {
+      alert("Ошибка при загрузке истории.");
+    };
+  }
+
+  // Очистка истории
+  clearHistoryBtn.addEventListener("click", () => {
+    const transaction = db.transaction(["gratitudes"], "readwrite");
+    const store = transaction.objectStore("gratitudes");
+    store.clear();
+
+    transaction.oncomplete = function () {
+      displayHistory();
+      updateProgressBar(); // Обновление прогресс-бара после очистки
+    };
+  });
+
+  // Переключение экранов
+  function switchScreen(screenId) {
+    document.querySelectorAll(".screen").forEach((screen) => {
+      screen.style.display = "none";
+    });
+    document.getElementById(screenId).style.display = "block";
+  }
+
+  // Переключение экранов с кнопок
+  navButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const screenId = button.getAttribute("data-screen");
+      switchScreen(screenId);
+    });
+  });
+
+  // Функция для обновления прогресс-бара
+  function updateProgressBar() {
+    const days = document.querySelectorAll(".day");
+    const gratitudeDays = new Set(); // Сет для хранения дней с благодарностями
+
+    const transaction = db.transaction(["gratitudes"], "readonly");
+    const store = transaction.objectStore("gratitudes");
+    const request = store.getAll();
+    
+    request.onsuccess = function () {
+      const history = request.result;
+
+      // Собираем все дни недели, в которые были добавлены благодарности
+      history.forEach((entry) => {
+        const entryDate = new Date(entry.date);
+        const dayOfWeek = entryDate.getDay(); // Получаем день недели (0 - воскресенье, 6 - суббота)
+        gratitudeDays.add(dayOfWeek);
+      });
+
+      // Обновление прогресс-бара
+      days.forEach((dayElement) => {
+        const dayNumber = parseInt(dayElement.getAttribute("data-day"));
+        if (gratitudeDays.has(dayNumber)) {
+          dayElement.classList.add("completed");  // День с благодарностью
+        } else {
+          dayElement.classList.add("incomplete"); // День без благодарности
+        }
+      });
+    };
+
+    request.onerror = function () {
+      alert("Ошибка при обновлении прогресс-бара.");
+    };
+  }
+
+  // Инициализация базы данных и истории
+  initDB();
+
+  form.addEventListener("submit", saveGratitude);
+});
+
+
+// ПРОКРУТКА ДОП. ПРИЛОЖЕНИЙ
+let isMouseDown = false;
+let startX;
+let scrollLeft;
+
+const recommendations = document.getElementById("recommendations");
+
+recommendations.addEventListener("mousedown", (e) => {
+    isMouseDown = true;
+    startX = e.pageX - recommendations.offsetLeft;
+    scrollLeft = recommendations.scrollLeft;
+});
+
+recommendations.addEventListener("mouseleave", () => {
+    isMouseDown = false;
+});
+
+recommendations.addEventListener("mouseup", () => {
+    isMouseDown = false;
+});
+
+recommendations.addEventListener("mousemove", (e) => {
+    if (!isMouseDown) return;
+    e.preventDefault();
+    const x = e.pageX - recommendations.offsetLeft;
+    const walk = (x - startX) * 2; // скорость прокрутки
+    recommendations.scrollLeft = scrollLeft - walk;
+});
+
+// - - - - - - - З А П О В Е Д И - - - - - - -
+
+ document.addEventListener("DOMContentLoaded", () => {
+    const bibleVerseElement = document.getElementById("bibleVerse");
+    const refreshVerseButton = document.getElementById("refreshVerse");
+
 const randomBibleVerses = [
     "Благодарите Господа, ибо Он благ, ибо вовек милость Его. (Псалом 106:1)",
     "Всё могу в укрепляющем меня Иисусе Христе. (Филиппийцам 4:13)",
@@ -45,321 +260,162 @@ const randomBibleVerses = [
     "Благодарю Тебя, Господи, за Твои обетования и надежду на будущее. (Иеремия 29:11)"
 ];
 
-    // Функция для получения случайного стиха
-    const getRandomBibleVerse = () => {
+    // Функция для выбора случайного стиха
+    function getRandomBibleVerse() {
         const randomIndex = Math.floor(Math.random() * randomBibleVerses.length);
-        bibleVerse.innerText = randomBibleVerses[randomIndex];
-    };
+        const newVerse = randomBibleVerses[randomIndex];
 
-    // Функция для обновления прогресс-бара
-    const updateProgressBar = () => {
-        const savedWeekProgress = JSON.parse(localStorage.getItem("weekProgress")) || {};
-        progressBarDays.forEach((dayElement, index) => {
-            if (savedWeekProgress[index]) {
-                dayElement.classList.add('completed');
-                dayElement.classList.remove('incomplete');
-            } else {
-                dayElement.classList.add('incomplete');
-                dayElement.classList.remove('completed');
-            }
-        });
-    };
+        // Прячем текст (устанавливаем opacity: 0)
+        bibleVerseElement.classList.remove('visible');
 
-    // Функция для отображения группы благодарностей
-    const displayGratitudeGroup = (gratitudeGroup) => {
-        if (gratitudeGroup && Array.isArray(gratitudeGroup.items)) {
-            const groupContainer = document.createElement("div");
-            groupContainer.classList.add("gratitude-group");
+        // Задержка, чтобы текст успел исчезнуть
+        setTimeout(function() {
+            // Обновляем текст
+            bibleVerseElement.innerText = newVerse;
+            // После обновления текста снова показываем его с плавной анимацией
+            bibleVerseElement.classList.add('visible');
+        }, 600); // Задержка, чтобы текст успел исчезнуть перед обновлением
+    }
 
-            const groupDate = document.createElement("span");
-            groupDate.classList.add("gratitude-date");
-            groupDate.innerText = gratitudeGroup.date;
-            groupContainer.appendChild(groupDate);
-
-            const gratitudeItems = document.createElement("div");
-            gratitudeItems.classList.add("gratitude-items");
-
-            gratitudeGroup.items.forEach(text => {
-                const gratitudeCard = document.createElement("p");
-                gratitudeCard.classList.add("gratitude-card");
-                gratitudeCard.innerText = text;
-                gratitudeItems.appendChild(gratitudeCard);
-            });
-
-            groupContainer.appendChild(gratitudeItems);
-            gratitudeList.appendChild(groupContainer);
-        } else {
-            console.error("Ошибка: gratitudeGroup.items не определён или не является массивом");
-        }
-    };
-
-    // Функция для получения индекса дня недели (неделя начинается с понедельника)
-    const getCurrentDayIndex = () => {
-        const today = new Date().getDay();
-        return today === 0 ? 6 : today - 1; // Воскресенье (0) -> 6, остальные дни сдвигаются на -1
-    };
-
-    // Функция для сохранения благодарности
-    const saveGratitude = () => {
-        const gratitudeTexts = [
-            gratitude1.value.trim(),
-            gratitude2.value.trim(),
-            gratitude3.value.trim()
-        ];
-
-        if (gratitudeTexts.some(text => text !== "")) {
-            const gratitudeGroup = {
-                date: new Date().toLocaleDateString(),
-                items: gratitudeTexts.filter(text => text !== "")
-            };
-
-            const savedGratitudes = JSON.parse(localStorage.getItem("gratitudes")) || [];
-            savedGratitudes.push(gratitudeGroup);
-            localStorage.setItem("gratitudes", JSON.stringify(savedGratitudes));
-
-            // Отображаем благодарность на экране
-            displayGratitudeGroup(gratitudeGroup);
-
-            // Очищаем поля ввода
-            gratitude1.value = "";
-            gratitude2.value = "";
-            gratitude3.value = "";
-
-            // Скрываем форму и показываем список
-            gratitudeInput.style.display = "none";
-            gratitudeList.style.display = "block";
-
-            // Обновляем прогресс недели
-            const currentDay = getCurrentDayIndex(); // Считаем по индексу дня недели
-            const savedWeekProgress = JSON.parse(localStorage.getItem("weekProgress")) || {};
-            savedWeekProgress[currentDay] = true; // Отмечаем текущий день как выполненный
-            localStorage.setItem("weekProgress", JSON.stringify(savedWeekProgress));
-
-            // Обновляем прогресс-бар
-            updateProgressBar();
-
-            // Сохраняем дату добавления благодарности
-            localStorage.setItem("gratitudeAddedDate", gratitudeGroup.date); 
-        }
-    };
-
-    // Загрузка данных из LocalStorage при загрузке страницы
-    const loadSavedGratitudes = () => {
-        const savedGratitudes = JSON.parse(localStorage.getItem("gratitudes")) || [];
-
-        // Фильтруем только те благодарности, которые добавлены сегодня
-        const currentDate = new Date().toLocaleDateString();
-        const todaysGratitudes = savedGratitudes.filter(gratitude => gratitude.date === currentDate);
-
-        // Отображаем благодарности за сегодня
-        todaysGratitudes.forEach(displayGratitudeGroup);
-    };
-
-    // Логика отображения формы благодарности в зависимости от времени суток и добавления благодарности
-    const showGratitudeInput = () => {
-        const currentHour = new Date().getHours(); // Получаем текущий час
-        const currentDate = new Date().toLocaleDateString(); // Получаем текущую дату
-
-        // Проверяем, была ли уже добавлена благодарность сегодня
-        const gratitudeAddedToday = localStorage.getItem("gratitudeAddedDate") === currentDate;
-
-        const infoMessage = document.createElement("div");
-        infoMessage.innerText = "Ежедневную благодарность Богу можно добавить с 19:00, оставляйте 3 благодарности, так же вы сможете просматривать свои благодарности в дальнейшем, Слава Иисусу!";
-        infoMessage.classList.add("info-message");
-
-        if (!document.querySelector(".info-message")) {
-            homeScreen.appendChild(infoMessage);
-        }
-
-        // Если благодарность уже добавлена, скрываем форму
-        if (gratitudeAddedToday) {
-            gratitudeInput.style.display = "none";
-            infoMessage.style.display = "none";  // Прячем информационное сообщение
-        } else {
-            if (currentHour >= 13 && currentHour < 24) {
-                gratitudeInput.style.display = "flex";
-                infoMessage.style.display = "none";
-            } else {
-                gratitudeInput.style.display = "none";
-                infoMessage.style.display = "block";
-            }
-        }
-
-        if (Notification.permission !== 'granted') {
-            Notification.requestPermission();
-        }
-
-        if (currentHour === 19 && !gratitudeAddedToday) {
-            if (Notification.permission === 'granted') {
-                new Notification("Не забудьте добавить свою благодарность!", {
-                    body: "Каждый день - это новый шанс быть благодарным.",
-                    icon: "https://cdn-icons-png.freepik.com/256/9982/9982934.png?ga=GA1.1.469636009.1732164694&semt=ais_hybrid"
-                });
-            }
-        }
-    };
-
-    // Переключение между экранами
-    const homeIcon = document.getElementById("homeIcon");
-    const savedIcon = document.getElementById("savedIcon");
-
-    homeIcon.addEventListener("click", () => {
-        homeScreen.style.display = "block";
-        gratitudeList.style.display = "none";
-        gratitudeInput.style.display = "flex";  // Показ формы, если ещё не добавлена благодарность
-        showGratitudeInput();  // Проверяем, нужно ли показывать форму
-    });
-
-    savedIcon.addEventListener("click", () => {
-        homeScreen.style.display = "none";
-        gratitudeList.style.display = "block";
-        gratitudeInput.style.display = "none"; // Скрываем форму на странице сохранённых
-    });
-
-    // Инициализация
+    // Отображаем случайный стих при загрузке страницы
     getRandomBibleVerse();
-    loadSavedGratitudes(); // Загружаем только сегодняшние благодарности
-    updateProgressBar();
-    showGratitudeInput();
 
-    saveButton.addEventListener("click", saveGratitude);
+    // Обновляем стих при нажатии на кнопку
+    refreshVerseButton.addEventListener("click", function() {
+        this.classList.add('rotate'); // Анимация вращения кнопки
+        
+        // Убираем класс через 1.5 секунды (по времени анимации вращения), чтобы можно было снова кликать
+        setTimeout(() => {
+            this.classList.remove('rotate');
+        }, 500);
+
+        // Обновляем стих
+        getRandomBibleVerse();
+    });
 });
 
-// МОДАЛЬНОЕ ОКНО
-document.addEventListener('DOMContentLoaded', function() {
-  const modal = document.querySelector('#myModal');
-  const closeBtn = document.querySelector('.close');
-  const helpIcon = document.getElementById('helpIcon');
+// НИЖНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ
+document.addEventListener("DOMContentLoaded", () => {
+    const icons = document.querySelectorAll('.icon');
+    const screens = document.querySelectorAll('.screen');
 
-  // Функция для открытия модального окна
-  function openModal() {
-    modal.style.display = 'block';
-    modal.classList.add('show'); // Добавляем класс для анимации
-    document.body.style.overflow = 'hidden'; // Отключаем прокрутку
-  }
-
-  // Функция для закрытия модального окна
-  function closeModal() {
-    modal.style.display = 'none';
-    modal.classList.remove('show'); // Убираем класс для анимации
-    document.body.style.overflow = 'auto'; // Включаем прокрутку
-  }
-
-  // Открытие модального окна по клику на иконку
-  helpIcon.addEventListener('click', openModal);
-
-  // Закрытие модального окна по клику на крестик
-  closeBtn.addEventListener('click', closeModal);
-
-  // Закрытие модального окна при клике вне его
-  window.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
-});
-
-
-// ПАНЕЛЬ МЕНЮ
-// Смена иконки при наведении
-const homeIcon = document.getElementById("homeIcon");
-const savedIcon = document.getElementById("savedIcon");
-const anotherIcon = document.getElementById("anotherIcon");
-
-const images = {
-    homeIcon: [
-        "https://cdn-icons-png.freepik.com/256/738/738873.png?ga=GA1.1.469636009.1732164694",
-        "https://cdn-icons-png.freepik.com/256/738/738822.png?semt=ais_hybrid"
-    ],
-    savedIcon: [
-        "https://cdn-icons-png.freepik.com/256/15129/15129049.png?ga=GA1.1.469636009.1732164694",
-        "https://cdn-icons-png.freepik.com/256/15129/15129170.png?semt=ais_hybrid"
-    ],
-    anotherIcon: [
-        "https://cdn-icons-png.freepik.com/256/786/786672.png?ga=GA1.1.469636009.1732164694&semt=ais_hybrid",
-        "https://cdn-icons-png.freepik.com/256/786/786723.png?ga=GA1.1.469636009.1732164694&semt=ais_hybrid"
-    ],
-     helpIcon: [
-        "https://cdn-icons-png.flaticon.com/128/7298/7298943.png",
-        "https://cdn-icons-png.flaticon.com/128/7298/7298928.png"
-    ]
-};
-
-function changeIconImage(iconId, isHovered) {
-    const icon = document.getElementById(iconId);
-    const img = icon.querySelector("img");
-
-    img.src = isHovered ? images[iconId][0] : images[iconId][1];
-}
-
-homeIcon.addEventListener("mouseenter", () => changeIconImage("homeIcon", true));
-homeIcon.addEventListener("mouseleave", () => changeIconImage("homeIcon", false));
-
-savedIcon.addEventListener("mouseenter", () => changeIconImage("savedIcon", true));
-savedIcon.addEventListener("mouseleave", () => changeIconImage("savedIcon", false));
-
-helpIcon.addEventListener("mouseenter", () => changeIconImage("helpIcon", true));
-helpIcon.addEventListener("mouseleave", () => changeIconImage("helpIcon", false));
-
-anotherIcon.addEventListener("mouseenter", () => changeIconImage("anotherIcon", true));
-anotherIcon.addEventListener("mouseleave", () => changeIconImage("anotherIcon", false));
-
-const shareIcon = document.getElementById("anotherIcon");
-
-shareIcon.addEventListener("click", () => {
-    const appLink = "https://dev-geniy.github.io/Thank-God/"; // Ссылка на приложение или сайт
-
-    if (navigator.share) {
-        navigator.share({
-            title: "Поделись этим приложением, несите благую весть!",
-            text: "Присоединяйся к ежедневной благодарности Господу Богу в web-приложении Thank You God!",
-            url: appLink
-        }).catch(error => {
-            console.error("Ошибка при использовании Web Share API:", error);
+    // Функция скрытия всех экранов
+    function hideAllScreens() {
+        screens.forEach(screen => {
+            screen.style.display = 'none';
         });
-    } else {
-        navigator.clipboard.writeText(appLink)
-            .then(() => {
-                alert("Ссылка на приложение скопирована в буфер обмена!");
-            })
-            .catch(error => {
-                console.error("Ошибка при копировании ссылки:", error);
-                alert("Не удалось скопировать ссылку. Попробуйте снова.");
-            });
     }
+
+    // Обработчик кликов по иконкам
+    icons.forEach(icon => {
+        icon.addEventListener('click', () => {
+            if (icon.id !== "anotherIcon") { // Исключаем кнопку "Поделиться"
+                hideAllScreens();
+                const targetScreen = document.getElementById(icon.dataset.screen);
+                if (targetScreen) {
+                    targetScreen.style.display = 'block';
+                }
+            }
+        });
+    });
+
+    // Иконки и их смена при наведении
+    const images = {
+        screen1: [
+            "https://cdn-icons-png.freepik.com/256/738/738873.png",
+            "https://cdn-icons-png.freepik.com/256/738/738822.png"
+        ],
+        screen2: [
+            "https://cdn-icons-png.freepik.com/256/15129/15129049.png",
+            "https://cdn-icons-png.freepik.com/256/15129/15129170.png"
+        ],
+        screen3: [
+            "https://cdn-icons-png.flaticon.com/128/7298/7298943.png",
+            "https://cdn-icons-png.flaticon.com/128/7298/7298928.png"
+        ],
+        screenShare: [
+            "https://cdn-icons-png.freepik.com/256/786/786672.png",
+            "https://cdn-icons-png.freepik.com/256/786/786723.png"
+        ]
+    };
+
+    function changeIconImage(iconElement, isHovered) {
+        const img = iconElement.querySelector("img");
+        const screen = iconElement.dataset.screen;
+        if (images[screen]) {
+            img.src = isHovered ? images[screen][0] : images[screen][1];
+        }
+    }
+
+    icons.forEach(icon => {
+        icon.addEventListener("mouseenter", () => changeIconImage(icon, true));
+        icon.addEventListener("mouseleave", () => changeIconImage(icon, false));
+    });
+
+    // Обработчик кнопки "Поделиться"
+    const shareIcon = document.querySelector("#anotherIcon");
+
+    shareIcon.addEventListener("click", () => {
+        const appLink = "https://dev-geniy.github.io/Thank-God/";
+
+        if (navigator.share) {
+            navigator.share({
+                title: "Поделитесь этим приложением",
+                text: "Присоединяйтесь к ежедневной благодарности Господу Богу в web-приложении Thank You God!",
+                url: appLink
+            }).catch(error => {
+                console.error("Ошибка при использовании Web Share API:", error);
+            });
+        } else {
+            navigator.clipboard.writeText(appLink)
+                .then(() => {
+                    alert("Ссылка на приложение скопирована в буфер обмена!");
+                })
+                .catch(error => {
+                    console.error("Ошибка при копировании ссылки:", error);
+                    alert("Не удалось скопировать ссылку. Попробуйте снова.");
+                });
+        }
+    });
 });
 
-// Функция для скрытия счетчика
+// ПЕРЕЗАГРУЗКА ХЕЙДЕРОМ
+document.querySelector('header').addEventListener('click', function() {
+    location.href = location.href; // Перезагружает страницу
+});
+
+// С Ч Ё Т Ч И К
+// Функция для скрытия счетчика и затемнения
 function hideCounter() {
     const counterContainer = document.getElementById('counter-container');
+    const overlay = document.getElementById('overlay');
+
+    // Скрываем счетчик с плавным исчезновением
     if (counterContainer) {
-        counterContainer.style.opacity = '0'; // Плавное исчезновение
-        setTimeout(() => counterContainer.style.display = 'none', 1000); // Удаление из потока через 1 секунду
+        counterContainer.classList.add('hidden');
     }
+
+    // Скрываем затемнение с плавным исчезновением
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+
+    // Убираем элементы из потока через 1 секунду
+    setTimeout(() => {
+        if (counterContainer) {
+            counterContainer.style.display = 'none';
+        }
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }, 1000); // Убираем элементы через 1 секунду
 }
 
 // Таймер для исчезновения через 10 секунд
-setTimeout(hideCounter, 12000);
+setTimeout(hideCounter, 8000); // Через 10 секунд скрываем счетчик и затемнение
 
-// Скрытие счетчика при клике на экран
+// Скрытие при клике на экран
 document.body.addEventListener('click', () => {
-    const counterContainer = document.getElementById('counter-container');
-    if (counterContainer && counterContainer.style.opacity !== '0') {
-        hideCounter();
-    }
+    hideCounter();
 });
 
-// Функция для сброса прогресса при начале новой недели
-const resetProgressIfNewWeek = () => {
-    const lastResetWeek = localStorage.getItem("lastResetWeek");
-    const currentWeek = Math.floor(new Date().getTime() / (7 * 24 * 60 * 60 * 1000)); // Номер текущей недели
-
-    if (lastResetWeek === null || parseInt(lastResetWeek) < currentWeek) {
-        // Сбрасываем прогресс
-        localStorage.removeItem("weekProgress");
-        localStorage.setItem("lastResetWeek", currentWeek); // Обновляем метку недели
-    }
-};
-
-    // Инициализация
-    resetProgressIfNewWeek(); // Сбрасываем прогресс, если началась новая неделя
