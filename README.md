@@ -3,6 +3,7 @@
 
 ![Thank You God](promo/ThankYouGod.png)
 
+Используйте приложение онлайн на сайте: [Открыть сайт](https://dev-geniy.github.io/Thank-God/)
 Или загрузите WPA и начните ваш путь благодарности прямо сейчас: [Скачать приложение](https://dev-geniy.github.io/Thank-God/)
 
 ## Описание проекта
