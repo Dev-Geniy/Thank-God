@@ -637,8 +637,6 @@ p {
 }
 
 /* --- С Ч Ё Т Ч И К --- */
-/* --- С Ч Ё Т Ч И К --- */
-
 /* Стиль для контейнера счетчика */
 #counter-container {
     position: fixed;
@@ -710,4 +708,38 @@ p {
     width: 40%;
     max-width: 400px;
     height: auto;
+}
+
+/* СКАЧАТЬ */
+.download-container {
+    margin-top: 30px; /* Отступ сверху для контейнера */
+    text-align: center; /* Центрируем содержимое внутри контейнера */
+}
+
+#downloadButton {
+    margin-top: 20px; /* Отступ сверху для кнопки (если нужен дополнительный отступ) */
+}
+
+img {
+    display: block; /* Убираем отступы снизу у изображения */
+    margin: 0 auto; /* Центрируем изображение */
+}
+
+/* ТРЕНИНГ КНОПКА */
+.download-button {
+    background-color: rgba(0, 0, 0, 0.8); /* Черный с 20% прозрачностью */
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.3s;
+}
+
+.download-button:hover {
+    background-color: rgba(0, 0, 0, 0.4); /* Черный с 40% прозрачностью при наведении */
 }
