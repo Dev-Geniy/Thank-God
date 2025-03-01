@@ -419,7 +419,7 @@ document.body.addEventListener('click', () => {
     hideCounter();
 });
 
-// Регистрация сервис-воркера в приложении
+// Регистрация сервис-воркера
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
@@ -433,7 +433,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-//КНОПКА СКАЧИВАНИЯ ПРИЛОЖЕНИЯ
+// КНОПКА СКАЧИВАНИЯ
 document.addEventListener('DOMContentLoaded', () => {
   const downloadButton = document.getElementById('downloadButton');
 
