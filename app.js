@@ -433,3 +433,34 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+//КНОПКА СКАЧИВАНИЯ ПРИЛОЖЕНИЯ
+document.addEventListener('DOMContentLoaded', () => {
+  const downloadButton = document.getElementById('downloadButton');
+
+  // Проверяем, поддерживает ли браузер установку PWA
+  let deferredPrompt;
+  
+  window.addEventListener('beforeinstallprompt', (event) => {
+    // Браузер поддерживает установку PWA
+    event.preventDefault();
+    deferredPrompt = event;
+
+    // Показать кнопку установки
+    downloadButton.style.display = 'block';
+
+    // Когда пользователь нажимает на кнопку установки
+    downloadButton.addEventListener('click', () => {
+      // Показываем системное окно установки
+      deferredPrompt.prompt();
+
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('Пользователь установил PWA');
+        } else {
+          console.log('Пользователь отклонил установку PWA');
+        }
+        deferredPrompt = null;
+      });
+    });
+  });
+});
