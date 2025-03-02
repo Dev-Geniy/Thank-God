@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const clearHistoryBtn = document.getElementById("clearHistory");
   const navButtons = document.querySelectorAll(".nav-btn");
 
-  let db;
+  let db; 
   
   // Инициализация базы данных IndexedDB
   function initDB() {
@@ -147,47 +147,68 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Функция для обновления прогресс-бара
-  function updateProgressBar() {
-    const days = document.querySelectorAll(".day");
-    const gratitudeDays = new Set(); // Сет для хранения дней с благодарностями
+// Функция для обновления прогресс-бара
+function updateProgressBar() {
+  const days = document.querySelectorAll(".day"); // Все элементы с классом "day"
+  const gratitudeDays = new Set(); // Множество для хранения дней с благодарностями
 
-    const transaction = db.transaction(["gratitudes"], "readonly");
-    const store = transaction.objectStore("gratitudes");
-    const request = store.getAll();
-    
-    request.onsuccess = function () {
-      const history = request.result;
+  const transaction = db.transaction(["gratitudes"], "readonly");
+  const store = transaction.objectStore("gratitudes");
+  const request = store.getAll();  // Получаем все записи
 
-      // Собираем все дни недели, в которые были добавлены благодарности
-      history.forEach((entry) => {
-        const entryDate = new Date(entry.date);
-        const dayOfWeek = entryDate.getDay(); // Получаем день недели (0 - воскресенье, 6 - суббота)
-        gratitudeDays.add(dayOfWeek);
-      });
+  request.onsuccess = function () {
+    const history = request.result;
 
-      // Обновление прогресс-бара
-      days.forEach((dayElement) => {
-        const dayNumber = parseInt(dayElement.getAttribute("data-day"));
-        if (gratitudeDays.has(dayNumber)) {
-          dayElement.classList.add("completed");  // День с благодарностью
-        } else {
-          dayElement.classList.add("incomplete"); // День без благодарности
-        }
-      });
-    };
+    // Собираем все дни недели, в которые были добавлены благодарности
+    history.forEach((entry) => {
+      const entryDate = new Date(entry.date); // Преобразуем дату из записи в объект Date
+      let dayOfWeek = entryDate.getDay(); // Получаем день недели (0 - воскресенье, 6 - суббота)
 
-    request.onerror = function () {
-      alert("Ошибка при обновлении прогресс-бара.");
-    };
-  }
+      // Сдвигаем дни так, чтобы понедельник был 0, а воскресенье - 6
+      if (dayOfWeek === 0) {
+        dayOfWeek = 6; // Если воскресенье (0), то оно будет равно 6
+      } else {
+        dayOfWeek -= 1; // Для остальных дней сдвигаем на 1 (понедельник = 0, вторник = 1 и т.д.)
+      }
+
+      gratitudeDays.add(dayOfWeek);  // Добавляем день недели в множество
+    });
+
+    // Проверяем, если сейчас понедельник (первая неделя месяца) и сбрасываем прогресс
+    const today = new Date();
+    const todayDayOfWeek = today.getDay();
+    let dayOfWeekToday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
+
+    if (dayOfWeekToday === 0) { // Если сегодня понедельник
+      // Очищаем все дни прогресса (сбрасываем)
+      gratitudeDays.clear();
+    }
+
+    // Обновление прогресс-бара
+    days.forEach((dayElement) => {
+      const dayNumber = parseInt(dayElement.getAttribute("data-day")); // Получаем номер дня недели
+
+      // Если этот день есть в множестве gratitudeDays, то он завершен
+      if (gratitudeDays.has(dayNumber)) {
+        dayElement.classList.add("completed");  // День с благодарностью
+        dayElement.classList.remove("incomplete"); // Убираем класс "incomplete", если был
+      } else {
+        dayElement.classList.add("incomplete"); // День без благодарности
+        dayElement.classList.remove("completed"); // Убираем класс "completed", если был
+      }
+    });
+  };
+
+  request.onerror = function () {
+    alert("Ошибка при обновлении прогресс-бара.");
+  };
+}
 
   // Инициализация базы данных и истории
   initDB();
 
   form.addEventListener("submit", saveGratitude);
 });
-
 
 // ПРОКРУТКА ДОП. ПРИЛОЖЕНИЙ
 let isMouseDown = false;
